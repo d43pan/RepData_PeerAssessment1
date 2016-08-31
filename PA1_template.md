@@ -154,6 +154,7 @@ In this data set the maximum number of steps happens in the **835th** interval.
 ## Imputing missing values
 
 *Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)*  
+Calculate the number of missing values in the dataset
 
 ```r
 num_incomplete <- sum( !complete.cases(activity) )
@@ -253,28 +254,36 @@ I'm using the mean to look at this because the number of days on weekends is les
 
 
 ```r
-weekend = c('Sat', 'Sun')
+weekend_abbr = c('Sat', 'Sun')
 
 complete_activity <- complete_activity %>%
                       mutate( date = as.Date(date) ) %>%
-                      mutate( weekend =  wday(date, label = TRUE, abbr = TRUE ) %in% weekend ) %>%
+                      mutate( weekend =  wday(date, label = TRUE, abbr = TRUE ) %in% weekend_abbr ) %>%
+                      mutate( weekend = ifelse( weekend, 'weekend', 'weekday' )) %>%
                       group_by(weekend, interval) %>%
                       summarize( steps = mean(steps)   )
                       
 
 yrange = range( complete_activity$steps )
 
+par( mfrow = c(2, 1))
 
-with( complete_activity[complete_activity$weekend,], plot(interval,steps, 
+par(oma=rep(4, 4), mar=c(0,5,0,0))
+
+with( complete_activity[complete_activity$weekend == 'weekend',], plot(interval,steps, 
                                                           type ="l",
                                                           col = "#FF0000AA",
+                                                          xaxt='n',
                                                           ylim = yrange) )
+title(main = "weekend", line = -1)
 
-with( complete_activity[!complete_activity$weekend,], lines(interval,steps, 
+with( complete_activity[complete_activity$weekend == 'weekday',], plot(interval,steps, 
                                                               type ="l",
-                                                              col = "#0000FFAA") )
+                                                              col = "#0000FFAA",
+                                                              ylim = yrange) )
+title(main = "weekday", line = -1)
 
-legend("topright", legend = c("Weekend", "Weekdays"), lty = 1, col = c("#FF0000AA", "#0000FFAA"))
+mtext(text="Interval", side=1, line=2, las=1)
 ```
 
 ![](PA1_template_files/figure-html/dayofweekdiffs-1.png)<!-- -->
