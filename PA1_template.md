@@ -1,31 +1,69 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 ## Library Loading
 I'm loading these at the very top because depending on your environment you might get some error messages.  I still think it's important for you to know what's going on, but you shouldn't have to be annoyed in the middle of my analysis.  
 
 - dplyr for summarize functionality.
 - lubridate for weekday vs. weekend comparison
-```{r libraryloading}
+
+```r
 library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
 library(lubridate)
+```
+
+```
+## 
+## Attaching package: 'lubridate'
+```
+
+```
+## The following object is masked from 'package:base':
+## 
+##     date
 ```
 
 ## Loading and preprocessing the data
 
 Unzipping the csv file inline.  And taking a look at the high level summary to get a feel for the data.
-```{r loaddata}
 
+```r
 activity <- read.csv(unzip('activity.zip'), 
                       header = TRUE,
                       na.string = "NA"
                       )
 
 summary(activity)
+```
+
+```
+##      steps                date          interval     
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5  
+##  3rd Qu.: 12.00   2012-10-05:  288   3rd Qu.:1766.2  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
+##  NA's   :2304     (Other)   :15840
 ```
 
 
@@ -41,8 +79,8 @@ Steps:
 - group by date  
 - create a sum of the steps for each date  
 
-```{r stepsperday}
 
+```r
 sum_steps <- activity %>% 
   filter(!is.na(steps)) %>%
   group_by(date) %>% 
@@ -54,12 +92,20 @@ hist(sum_steps$steps,
      ylab = "Frequency", 
      main = "Histogram of Steps per Day") 
 ```
+
+![](PA1_template_files/figure-html/stepsperday-1.png)<!-- -->
  
 *Calculate and report the mean and median of the total number of steps taken per day*   
 I'm printing out a five number summary to get the mean and median.
  
-```{r stepsmeanmedian}
+
+```r
 summary(sum_steps$steps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    8841   10760   10770   13290   21190
 ```
 
 ## What is the average daily activity pattern?  
@@ -69,16 +115,17 @@ summary(sum_steps$steps)
 For this I'm going to do a few things.
 
 First, get the mean steps per interval.
-```{r stepstakenbytimeinterval}
 
+```r
 mean_interval_steps <- activity %>% 
   filter( !is.na( steps ) ) %>% 
   group_by(interval) %>% 
   summarize(steps = mean(steps) )
-```  
+```
 
 Then, I'm going to plot the mean steps per interval, with a horizontal line at the max steps value.  
-```{r plotmeanintervalsteps}
+
+```r
 plot(x = mean_interval_steps$interval, 
      y = mean_interval_steps$steps, 
      type ="l",
@@ -98,21 +145,27 @@ ticks = c(max_steps$interval)
 axis(side = 1, at = ticks, col = "red")
 ```
 
+![](PA1_template_files/figure-html/plotmeanintervalsteps-1.png)<!-- -->
+
 *Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?*  
 
-In this data set the maximum number of steps happens in the **`r max_steps$interval`th** interval.  
+In this data set the maximum number of steps happens in the **835th** interval.  
 
 ## Imputing missing values
 
 *Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)*  
-```{rCalculating the number of missing values in the dataset
- incompletecases}
+
+```r
 num_incomplete <- sum( !complete.cases(activity) )
 
 num_incomplete
 ```
 
-There are **`r num_incomplete`** rows which contain NAs.
+```
+## [1] 2304
+```
+
+There are **2304** rows which contain NAs.
   
   
 *Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.*  
@@ -122,22 +175,31 @@ I'm going to use mean for each interval to fill in.  I'm not actually even going
 
 *Create a new dataset that is equal to the original dataset but with the missing data filled in.*  
 
-```{r createcompletedataframe}
 
-
+```r
 complete_activity <- left_join(activity, mean_interval_steps, by = 'interval') %>%
                                 mutate( steps.x = ifelse(!is.na(steps.x), steps.x, steps.y)) %>%
                                 rename(steps = steps.x) %>% 
                                 select( -steps.y )
 
 summary(complete_activity )
+```
 
+```
+##      steps                date          interval     
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5  
+##  3rd Qu.: 27.00   2012-10-05:  288   3rd Qu.:1766.2  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
+##                   (Other)   :15840
 ```
 
 *Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?*  
 
-```{r histogramcompleteactivity}
 
+```r
 complete_sum_steps <- complete_activity %>% 
   group_by(date) %>% 
   summarize(steps = sum(steps))
@@ -148,19 +210,38 @@ hist(complete_sum_steps$steps,
      xlab = "Steps per Day",
      ylab = "Frequency", 
      main = "Imputed Histogram of Steps per Day") 
+```
 
+![](PA1_template_files/figure-html/histogramcompleteactivity-1.png)<!-- -->
+
+```r
 hist(sum_steps$steps, 
      breaks = 20,
      xlab = "Steps per Day",
      ylab = "Frequency",
      main = "Histogram of Steps per Day") 
-
 ```
 
+![](PA1_template_files/figure-html/histogramcompleteactivity-2.png)<!-- -->
 
-```{r completestepsmeanmedian}
+
+
+```r
 summary(complete_sum_steps$steps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10770   10770   12810   21190
+```
+
+```r
 summary(sum_steps$steps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    8841   10760   10770   13290   21190
 ```
 
 There are many more observations around the means of the the plot now.  I believe this is mostly due to the fact that I filled NA values with means calculated for those same intervals.  
@@ -170,8 +251,8 @@ There are many more observations around the means of the the plot now.  I believ
 
 I'm using the mean to look at this because the number of days on weekends is less than weekdays.
 
-```{r dayofweekdiffs}
 
+```r
 weekend = c('Sat', 'Sun')
 
 complete_activity <- complete_activity %>%
@@ -194,7 +275,8 @@ with( complete_activity[!complete_activity$weekend,], lines(interval,steps,
                                                               col = "#0000FFAA") )
 
 legend("topright", legend = c("Weekend", "Weekdays"), lty = 1, col = c("#FF0000AA", "#0000FFAA"))
-
 ```
+
+![](PA1_template_files/figure-html/dayofweekdiffs-1.png)<!-- -->
 
 It appears as though there's more activity in the early hours of weekdays.  As the day goes on it appears as though there's more sustained activity in the afternoon and evening.
